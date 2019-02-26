@@ -13,20 +13,28 @@
 // DOCUMENTATION
 // https://autohotkey.com/docs/AutoHotkey.htm
 //
+// CHANGELOG
+// v1.1.0 - Added function ToggleListenToDevice
+// v1.0.0 - INITIAL RELEASE
+//
 //
 // Script details
 //
-__version__  := "1.0.0"
-__modified__ := "2018/08/06"
+__version__  := "1.1.0"
+__modified__ := "2019/02/26"
 __author__   := "SupahNoob"
+__ahk_vers__ := "1.1.29.01"  // written on version
 
 // Details Notification
-MsgBox, 49, Script Info,
+MsgBox, 49, Script Info (%A_ScriptName%),
 ( 
 The following script is about to be activated.
+It was written on AHK version %__ahk_vers__%.
 
-filename: %A_ScriptName%
+path: %A_ScriptFullPath%
+
 version: %__version__%
+AHK version: %A_AhkVersion%
 last modified: %__modified__%
 author: %__author__%
 )
@@ -66,12 +74,12 @@ OpenActivate(window, window_fp:=0) {
 
     Parameters
     ----------
-        window - the full name/title/hwnd to open, include the directive
-        window_fp - the location of the program to open
+    window - the full name/title/hwnd to open, include the directive
+    window_fp - the location of the program to open
 
     Returns
     -------
-        None
+    None
     */
     if WinExist(window) {
         WinActivate, %window%
@@ -88,11 +96,11 @@ ToggleWindowAlwaysOnTop() {
 
     Parameters
     ----------
-        None
+    None
 
     Returns
     -------
-        None
+    None
     */
 
     // Get the current window's HWND (A is an alias for "Active")
@@ -124,6 +132,54 @@ ToggleWindowAlwaysOnTop() {
 }
 
 
+ToggleListenToDevice(device_name) {
+    /*
+    Toggles recording <device_name> ON|OFF.
+
+    Usage
+    -----
+    #r:: ToggleListenToDevice("Stereo Mix")
+
+    Parameters
+    ----------
+    device_name : str
+        device to listen to
+
+    Returns
+    -------
+    None
+
+    */
+    // subroutine to open up the "Sound: Recording" panel
+    SUBR := "rundll32.exe shell32.dll, Control_RunDLL mmsys.cpl,,recording"
+    REC_CLASS := "ahk_class #32770"
+    PROPERTIES := device_name . " Properties"
+
+    // run the subroutine and assign it's PID to <recording_panel_PID>
+    Run, %SUBR%
+    WinWait, %REC_CLASS%
+
+    // assign a list of elements to <items>
+    ControlGet, items, List, , SysListView321, %REC_CLASS%
+
+    // Loop through Recording devices, until finding the target device name
+    //     and once found, move into the Properties menu, select
+    //    "Listen to this Device" as denoted by Button1, select Apply, and
+    //    finally exiting all menus.
+    Loop, Parse, items, `n
+    {
+        ControlSend, SysListView321, {Down}
+        if InStr(A_LoopField, device_name) {
+            ControlClick, &Properties
+            WinWait, %PROPERTIES%
+            ControlSend, , {CTRL DOWN}{Tab}{CTRL UP}, %PROPERTIES%
+            ControlSend, Button1, {Space}
+            ControlSend, , {Enter}
+            ControlSend, , {Escape}, %REC_CLASS%
+        }
+    }
+}
+
 // ----------------------------------------------------------------------------
 // REBINDS
 //
@@ -138,20 +194,21 @@ ToggleWindowAlwaysOnTop() {
 //
 //   Window-specific hotkeys are possible, but must use the IfWinActive <name>
 //   directive in order to work properly.
-//
-Capslock::               SendInput, {Numpad9}
-<^WheelUp::              SendInput, {LControl DOWN}{PgUp}{LControl UP}
-<^WheelDown::            SendInput, {LControl DOWN}{PgDn}{LControl UP}
-PrintScreen::            SendInput, {Media_Play_Pause}
-PrintScreen & LButton::  SendInput, {Media_Prev}
-PrintScreen & RButton::  SendInput, {Media_Next}
+//  
+Capslock::              Numpad9
+PrintScreen::           Media_Play_Pause
+PrintScreen & LButton:: Media_Prev
+PrintScreen & RButton:: Media_Next
 
-// Context-relevant hotkeys
+<^WheelUp::   SendInput, {LControl DOWN}{PgUp}{LControl UP}
+<^WheelDown:: SendInput, {LControl DOWN}{PgDn}{LControl UP}
+
 #If WinActive("ahk_exe dota2.exe")
     <!Tab::
         SendInput, {Tab}
     return
 #If
 
-#s:: OpenActivate(SPOTIFY_EXE, SPOTIFY_FP)
+#s::  OpenActivate(SPOTIFY_EXE, SPOTIFY_FP)
 #^a:: ToggleWindowAlwaysOnTop()
+#p::  ToggleListenToDevice("Stereo Mix")

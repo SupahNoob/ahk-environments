@@ -82,6 +82,59 @@ ToggleWindowAlwaysOnTop() {
 }
 ```
 
+***ToggleListenToDevice***
+
+**Use case**: *toggle listening to another recording device - used to mirror audio output to USB speakers*
+```
+ToggleListenToDevice(device_name) {
+    /*
+    Toggles recording <device_name> ON|OFF.
+
+    Usage
+    -----
+    #r:: ToggleListenToDevice("Stereo Mix")
+
+    Parameters
+    ----------
+    device_name : str
+        device to listen to
+
+    Returns
+    -------
+    None
+
+    */
+    // subroutine to open up the "Sound: Recording" panel
+    SUBR := "rundll32.exe shell32.dll, Control_RunDLL mmsys.cpl,,recording"
+    REC_CLASS := "ahk_class #32770"
+    PROPERTIES := device_name . " Properties"
+
+    // run the subroutine and assign it's PID to <recording_panel_PID>
+    Run, %SUBR%
+    WinWait, %REC_CLASS%
+
+    // assign a list of elements to <items>
+    ControlGet, items, List, , SysListView321, %REC_CLASS%
+
+    // Loop through Recording devices, until finding the target device name
+    //     and once found, move into the Properties menu, select
+    //    "Listen to this Device" as denoted by Button1, select Apply, and
+    //    finally exiting all menus.
+    Loop, Parse, items, `n
+    {
+        ControlSend, SysListView321, {Down}
+        if InStr(A_LoopField, device_name) {
+            ControlClick, &Properties
+            WinWait, %PROPERTIES%
+            ControlSend, , {CTRL DOWN}{Tab}{CTRL UP}, %PROPERTIES%
+            ControlSend, Button1, {Space}
+            ControlSend, , {Enter}
+            ControlSend, , {Escape}, %REC_CLASS%
+        }
+    }
+}
+```
+
 ---
 
 ## [AutoHotkey][1]
