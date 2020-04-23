@@ -14,6 +14,7 @@
 // https://autohotkey.com/docs/AutoHotkey.htm
 //
 // CHANGELOG
+// v1.2.1 - Updating keybinds for a new mouse
 // v1.2.0 - Added SysVol changer
 // v1.1.0 - Added function ToggleListenToDevice
 // v1.0.0 - INITIAL RELEASE
@@ -21,8 +22,8 @@
 //
 // Script details
 //
-__version__  := "1.2.0"
-__modified__ := "2019/12/26"
+__version__  := "1.2.1"
+__modified__ := "2020/04/23"
 __author__   := "SupahNoob"
 __ahk_vers__ := "1.1.29.01"  // written on version
 
