@@ -14,14 +14,15 @@
 // https://autohotkey.com/docs/AutoHotkey.htm
 //
 // CHANGELOG
+// v1.2.0 - Added SysVol changer
 // v1.1.0 - Added function ToggleListenToDevice
 // v1.0.0 - INITIAL RELEASE
 //
 //
 // Script details
 //
-__version__  := "1.1.0"
-__modified__ := "2019/02/26"
+__version__  := "1.2.0"
+__modified__ := "2019/12/26"
 __author__   := "SupahNoob"
 __ahk_vers__ := "1.1.29.01"  // written on version
 
@@ -132,53 +133,60 @@ ToggleWindowAlwaysOnTop() {
 }
 
 
-ToggleListenToDevice(device_name) {
+TogglePlaybackDevice(device_names*) {
     /*
-    Toggles recording <device_name> ON|OFF.
+    Toggle default Playback device to one of devices.
+
+    This function requires that Python 3.7+ by installed with the library
+    called "sounddevice" in the global installed packages.
 
     Usage
     -----
-    #r:: ToggleListenToDevice("Stereo Mix")
+    #r:: SetDefaultPlaybackDevice("Stereo Mix")
 
     Parameters
     ----------
-    device_name : str
-        device to listen to
+    device_names* : str
+        given arguments of the device names to toggle between
 
     Returns
     -------
     None
 
     */
-    // subroutine to open up the "Sound: Recording" panel
-    SUBR := "rundll32.exe shell32.dll, Control_RunDLL mmsys.cpl,,recording"
-    REC_CLASS := "ahk_class #32770"
-    PROPERTIES := device_name . " Properties"
+    // Path to the nircmd utility
+    nircmd := Format("C:\Users\{1}\AppData\Local\nircmd\nircmd.exe", A_UserName)
 
-    // run the subroutine and assign it's PID to <recording_panel_PID>
-    Run, %SUBR%
-    WinWait, %REC_CLASS%
+    // Get the current device name
+    device_table := ComObjCreate("WScript.Shell").Exec("python -m sounddevice").StdOut.ReadAll()
+    device_arr := StrSplit(device_table, "`n")
 
-    // assign a list of elements to <items>
-    ControlGet, items, List, , SysListView321, %REC_CLASS%
-
-    // Loop through Recording devices, until finding the target device name
-    //     and once found, move into the Properties menu, select
-    //    "Listen to this Device" as denoted by Button1, select Apply, and
-    //    finally exiting all menus.
-    Loop, Parse, items, `n
-    {
-        ControlSend, SysListView321, {Down}
-        if InStr(A_LoopField, device_name) {
-            ControlClick, &Properties
-            WinWait, %PROPERTIES%
-            ControlSend, , {CTRL DOWN}{Tab}{CTRL UP}, %PROPERTIES%
-            ControlSend, Button1, {Space}
-            ControlSend, , {Enter}
-            ControlSend, , {Escape}, %REC_CLASS%
+    // loop through our toggleable devices, finding the current Playback device
+    // (this is denoted in sounddevice as "<" or "output")
+    for idx, device in device_arr
+        if InStr(device, "<") {
+            RegExMatch(device, "<\s*\d+\s(?<name>.*?)\s\(.*", sub_pattern)
+            current_device_name := sub_patternName
         }
-    }
+
+    // loop through our device list and set the new device
+    for idx, device in device_names
+        if ("" . device = current_device_name) {
+            if (idx = device_names.MaxIndex()) {
+                pos := 1
+            }
+            else {
+                pos := idx + 1
+            }
+        }
+
+    device_name := device_names[pos]
+
+    // actually do the setting... :~)
+    Run, %nircmd% setdefaultsounddevice `"%device_name%`" 0
+    Run, %nircmd% setdefaultsounddevice `"%device_name%`" 2
 }
+
 
 // ----------------------------------------------------------------------------
 // REBINDS
@@ -195,10 +203,18 @@ ToggleListenToDevice(device_name) {
 //   Window-specific hotkeys are possible, but must use the IfWinActive <name>
 //   directive in order to work properly.
 //  
-Capslock::              Numpad9
-PrintScreen::           Media_Play_Pause
-PrintScreen & LButton:: Media_Prev
-PrintScreen & RButton:: Media_Next
+Capslock::      Numpad9
+F15::           Media_Play_Pause
+F15 & LButton:: Media_Prev
+F15 & RButton:: Media_Next
+
+// rebinding Razer mouse buttons
+// F1:: F16  // use this to set the button in Synapse
+// F13:: MsgBox, , F13, RazerSynapse labels this 6
+// F14:: MsgBox, , F14, RazerSynapse labels this 7
+// F15:: MsgBox, , F15, RazerSynapse labels this 4 [Mouse 4]
+// F16:: MsgBox, , F16, RazerSynapse labels this 5 [Mouse 5]
+
 
 <^WheelUp::   SendInput, {LControl DOWN}{PgUp}{LControl UP}
 <^WheelDown:: SendInput, {LControl DOWN}{PgDn}{LControl UP}
@@ -211,4 +227,4 @@ PrintScreen & RButton:: Media_Next
 
 #s::  OpenActivate(SPOTIFY_EXE, SPOTIFY_FP)
 #^a:: ToggleWindowAlwaysOnTop()
-#p::  ToggleListenToDevice("Stereo Mix")
+#p:: TogglePlaybackDevice("Headphones", "Desk Speakers")
