@@ -8,12 +8,15 @@
 #WinActivateForce      // grab windows, might prevent taskbar from flashing
 #Persistent            // run until killed in taskbar
 
+// listen for changes to Zoom.exe
+Run, webcam_monitor.ahk, C:\Users\%A_UserName%\Desktop\
 
 // ----------------------------------------------------------------------------
 // DOCUMENTATION
 // https://autohotkey.com/docs/AutoHotkey.htm
 //
 // CHANGELOG
+// v1.2.2 - Adding a call to webcam_monitor.ahk
 // v1.2.1 - Updating keybinds for a new mouse
 // v1.2.0 - Added SysVol changer
 // v1.1.0 - Added function ToggleListenToDevice
@@ -23,7 +26,7 @@
 // Script details
 //
 __version__  := "1.2.1"
-__modified__ := "2020/04/23"
+__modified__ := "2020/07/28"
 __author__   := "SupahNoob"
 __ahk_vers__ := "1.1.29.01"  // written on version
 
@@ -41,26 +44,13 @@ last modified: %__modified__%
 author: %__author__%
 )
 
-ifmsgbox, OK 
+ifmsgbox, OK
 {
     // do nothing
-}
-else
-{
-    MsgBox, , Script Info,
-    (
-    Cancelling startup, "%A_ScriptName%" will close.
-    )
+} else {
+    MsgBox, , Script Info, Cancelling startup, "%A_ScriptName%" will close.
     ExitApp
 }
-
-// ----------------------------------------------------------------------------
-// VARIABLES
-//
-SPOTIFY_EXE := "ahk_exe spotify.exe"
-SPOTIFY_FP  := Format("C:\Users\{1}\AppData\Roaming\Spotify\Spotify.exe", A_UserName)
-DOTA_EXE    := "ahk_exe dota2.exe"
-
 
 // ----------------------------------------------------------------------------
 // FUNCTIONS
@@ -122,8 +112,7 @@ ToggleWindowAlwaysOnTop() {
         SplashImage, , X%centered% Y%adjusted% B1 CW%red%, ALWAYS ON TOP: OFF
         Sleep, 750
         SplashImage, Off
-    }
-    else {
+    } else {
         SplashImage, , x%centered% y%adjusted% b1 CW%green%, ALWAYS ON TOP: ON
         Sleep, 750
         SplashImage, Off
@@ -155,11 +144,13 @@ TogglePlaybackDevice(device_names*) {
     None
 
     */
+    shell := ComObjCreate("wscript.shell")
+
     // Path to the nircmd utility
     nircmd := Format("C:\Users\{1}\AppData\Local\nircmd\nircmd.exe", A_UserName)
 
     // Get the current device name
-    device_table := ComObjCreate("WScript.Shell").Exec("python -m sounddevice").StdOut.ReadAll()
+    device_table := shell.Exec("python -m sounddevice").StdOut.ReadAll()
     device_arr := StrSplit(device_table, "`n")
 
     // loop through our toggleable devices, finding the current Playback device
@@ -188,6 +179,12 @@ TogglePlaybackDevice(device_names*) {
     Run, %nircmd% setdefaultsounddevice `"%device_name%`" 2
 }
 
+// ----------------------------------------------------------------------------
+// VARIABLES
+//
+SPOTIFY_EXE := "ahk_exe spotify.exe"
+SPOTIFY_FP  := Format("C:\Users\{1}\AppData\Roaming\Spotify\Spotify.exe", A_UserName)
+DOTA_EXE    := "ahk_exe dota2.exe"
 
 // ----------------------------------------------------------------------------
 // REBINDS
@@ -205,9 +202,10 @@ TogglePlaybackDevice(device_names*) {
 //   directive in order to work properly.
 //  
 Capslock::      Numpad9
-F15::           Media_Play_Pause
-F15 & LButton:: Media_Prev
-F15 & RButton:: Media_Next
+F14::           Media_Play_Pause
+F14 & LButton:: Media_Prev
+F14 & RButton:: Media_Next
+F15:: LAlt
 
 // rebinding Razer mouse buttons
 // F1:: F16  // use this to set the button in Synapse
@@ -228,4 +226,4 @@ F15 & RButton:: Media_Next
 
 #s::  OpenActivate(SPOTIFY_EXE, SPOTIFY_FP)
 #^a:: ToggleWindowAlwaysOnTop()
-#p:: TogglePlaybackDevice("Headphones", "Desk Speakers")
+#p::  TogglePlaybackDevice("AKG Headphones", "USB Desk Speakers")
