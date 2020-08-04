@@ -202,15 +202,15 @@ DOTA_EXE    := "ahk_exe dota2.exe"
 //   directive in order to work properly.
 //  
 Capslock::      Numpad9
-F14::           Media_Play_Pause
-F14 & LButton:: Media_Prev
-F14 & RButton:: Media_Next
+F13::           Media_Play_Pause
+F13 & LButton:: Media_Prev
+F13 & RButton:: Media_Next
 F15:: LAlt
 
 // rebinding Razer mouse buttons
-// F1:: F16  // use this to set the button in Synapse
-// F13:: MsgBox, , F13, RazerSynapse labels this 6
-// F14:: MsgBox, , F14, RazerSynapse labels this 7
+// F1:: F13  // use this to set the button in Synapse
+// F13:: MsgBox, , F13, RazerSynapse labels this 6 [Sensitivity Up]
+// F14:: MsgBox, , F14, RazerSynapse labels this 7 [Sensitivity Down]
 // F15:: MsgBox, , F15, RazerSynapse labels this 4 [Mouse 4]
 // F16:: MsgBox, , F16, RazerSynapse labels this 5 [Mouse 5]
 
