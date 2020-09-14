@@ -16,6 +16,7 @@ Run, webcam_monitor.ahk, C:\Users\%A_UserName%\Desktop\
 // https://autohotkey.com/docs/AutoHotkey.htm
 //
 // CHANGELOG
+// v1.3.0 - Moving to associative arrays for better organization, updated OpenActivate to include %working_dir%
 // v1.2.2 - Adding a call to webcam_monitor.ahk
 // v1.2.1 - Updating keybinds for a new mouse
 // v1.2.0 - Added SysVol changer
@@ -25,10 +26,10 @@ Run, webcam_monitor.ahk, C:\Users\%A_UserName%\Desktop\
 //
 // Script details
 //
-__version__  := "1.2.1"
-__modified__ := "2020/07/28"
+__version__  := "1.3.0"
+__modified__ := "2020/09/14"
 __author__   := "SupahNoob"
-__ahk_vers__ := "1.1.29.01"  // written on version
+__ahk_vers__ := "1.1.29.01"  // the version the script was written for
 
 // Details Notification
 MsgBox, 49, Script Info (%A_ScriptName%),
@@ -55,7 +56,7 @@ ifmsgbox, OK
 // ----------------------------------------------------------------------------
 // FUNCTIONS
 //
-OpenActivate(window, window_fp:=0) {
+OpenActivate(window, window_fp:=0, working_dir:=0) {
     /*
     Bring the <window> to the front, or open it at <window_fp>.
 
@@ -68,16 +69,20 @@ OpenActivate(window, window_fp:=0) {
     ----------
     window - the full name/title/hwnd to open, include the directive
     window_fp - the location of the program to open
+    working_dir - dir to launch the program from, defaults to A_WorkingDir
 
     Returns
     -------
     None
     */
+    if working_dir = 0
+        working_dir := A_WorkingDir
+
     if WinExist(window) {
         WinActivate, %window%
     } else {
-        if window_fp != 0
-            Run, %window_fp%
+        if (window_fp != 0)
+            Run, %window_fp%, %working_dir%
     }
 }
 
@@ -182,9 +187,20 @@ TogglePlaybackDevice(device_names*) {
 // ----------------------------------------------------------------------------
 // VARIABLES
 //
-SPOTIFY_EXE := "ahk_exe spotify.exe"
-SPOTIFY_FP  := Format("C:\Users\{1}\AppData\Roaming\Spotify\Spotify.exe", A_UserName)
-DOTA_EXE    := "ahk_exe dota2.exe"
+
+// AHK won't let us use multiple lines to define an associative array, so we're stuck being verbose.
+SPOTIFY := {}
+SPOTIFY["exe"]  := "ahk_exe spotify.exe"
+SPOTIFY["path"] := Format("C:\Users\{1}\AppData\Roaming\Spotify\Spotify.exe", A_UserName)
+SPOTIFY["dir"]  := Format("C:\Users\{1}\AppData\Roaming\Spotify", A_UserName)
+
+OBS := {}
+OBS["exe"]  := "ahk_exe obs64.exe"
+OBS["path"] := "C:\Program Files\obs-studio\bin\64bit\obs64.exe"
+OBS["dir"]  := "C:\Program Files\obs-studio\bin\64bit"
+
+DOTA := {}
+DOTA["exe"] := "ahk_exe dota2.exe"
 
 // ----------------------------------------------------------------------------
 // REBINDS
@@ -214,16 +230,16 @@ F15:: LAlt
 // F15:: MsgBox, , F15, RazerSynapse labels this 4 [Mouse 4]
 // F16:: MsgBox, , F16, RazerSynapse labels this 5 [Mouse 5]
 
-
 <^WheelUp::   SendInput, {LControl DOWN}{PgUp}{LControl UP}
 <^WheelDown:: SendInput, {LControl DOWN}{PgDn}{LControl UP}
 
-#If WinActive("ahk_exe dota2.exe")
+#If WinActive(DOTA["exe"])
     <!Tab::
         SendInput, {Tab}
     return
 #If
 
-#s::  OpenActivate(SPOTIFY_EXE, SPOTIFY_FP)
+#s::  OpenActivate(SPOTIFY["exe"], SPOTIFY["path"])
+#v::  OpenActivate(OBS["exe"], OBS["path"], OBS["dir"])
 #^a:: ToggleWindowAlwaysOnTop()
 #p::  TogglePlaybackDevice("AKG Headphones", "USB Desk Speakers")
